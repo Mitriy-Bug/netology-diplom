@@ -1,4 +1,5 @@
 import React from 'react';
+//import PropTypes from 'prop-types';
 
 function PriceConfigurationComponent() {
 
@@ -32,5 +33,14 @@ function PriceConfigurationComponent() {
     </section>
     )
 }
-
+// Пропсы
+// PriceConfigurationComponent.propTypes = {
+//   halls: PropTypes.arrayOf(
+//       PropTypes.shape({
+//         id: PropTypes.number.isRequired,
+//         name: PropTypes.string.isRequired,
+//       })
+//   ).isRequired,
+//   setHalls: PropTypes.func.isRequired,
+// };
 export default PriceConfigurationComponent;

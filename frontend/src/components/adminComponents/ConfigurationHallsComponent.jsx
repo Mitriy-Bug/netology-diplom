@@ -1,4 +1,5 @@
 import React from 'react';
+//import PropTypes from 'prop-types';
 
 function ConfigurationHallsComponent() {
 
@@ -72,5 +73,14 @@ function ConfigurationHallsComponent() {
 </section>
     )
 }
-
+// Пропсы
+// ConfigurationHallsComponent.propTypes = {
+//     halls: PropTypes.arrayOf(
+//         PropTypes.shape({
+//             id: PropTypes.number.isRequired,
+//             name: PropTypes.string.isRequired,
+//         })
+//     ).isRequired,
+//     setHalls: PropTypes.func.isRequired,
+// };
 export default ConfigurationHallsComponent;

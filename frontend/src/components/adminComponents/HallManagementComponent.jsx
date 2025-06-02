@@ -5,10 +5,10 @@ import PropTypes from 'prop-types';
 function HallManagementComponent({ halls, setHalls }) {
     const [message, setMessage] = useState(null);
 
-    const addNewHall = async ( name, total_rows, total_seats_per_row ) => {        
+    const addNewHall = async ( name, total_rows, total_seats_per_row ) => {
         try {
             // Отправка данных на сервер
-            const response = await fetch('http://127.0.0.1:8000/administrator/cinema-halls/add', {
+            const response = await fetch('http://127.0.0.1:3000/administrator/cinema-halls/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -21,6 +21,7 @@ function HallManagementComponent({ halls, setHalls }) {
             }
 
             const data = await response.json();
+            console.log(data)
             setHalls([...halls, data.data]); // Обновляем список залов
             setMessage('Зал успешно добавлен!');
             
@@ -31,7 +32,7 @@ function HallManagementComponent({ halls, setHalls }) {
 
     const deleteHall = async (hallId) => {
         try {
-            const response = await fetch(`http://127.0.0.1:8000/administrator/cinema-halls/del/${hallId}`, {
+            const response = await fetch(`http://127.0.0.1:3000/administrator/cinema-halls/del/${hallId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',
