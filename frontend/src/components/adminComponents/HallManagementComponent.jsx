@@ -6,16 +6,17 @@ function HallManagementComponent({ halls, setHalls }) {
     const [message, setMessage] = useState(null);
 
     const addNewHall = async ( name, total_rows, total_seats_per_row ) => {
+
         try {
             // Отправка данных на сервер
-            const response = await fetch('http://127.0.0.1:3000/administrator/cinema-halls/add', {
+            const response = await fetch('http://127.0.0.1:8000/administrator/cinema-halls/add', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ name: name, total_rows: total_rows, total_seats_per_row: total_seats_per_row }),
             });
-
+            //console.log(JSON.stringify({ name: name, total_rows: total_rows, total_seats_per_row: total_seats_per_row }))
             if (!response.ok) {
                 throw new Error('Ошибка создания зала');
             }
@@ -69,7 +70,9 @@ function HallManagementComponent({ halls, setHalls }) {
             <header className="conf-step__header conf-step__header_opened">
                 <h2 className="conf-step__title">Управление залами</h2>
             </header>
-
+            <form method="POST" action="/profile">
+                <input type="hidden" name="_token" value="{{ csrf_token() }}" />
+            </form>
             <div className="conf-step__wrapper">
                 <p className="conf-step__paragraph">Доступные залы:</p>
                 <ul className="conf-step__list">

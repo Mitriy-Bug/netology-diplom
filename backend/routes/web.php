@@ -7,6 +7,8 @@ use App\Http\Controllers\SessionSeatController;
 use App\Http\Controllers\SeatTypeController;
 use App\Http\Controllers\CinemaHallController;
 
+
+
 Route::group(['prefix' => 'api'], function () {
     Route::resource('films', 'App\Http\Controllers\FilmsController');
     Route::resource('sessions', 'App\Http\Controllers\SessionsController');//сессии показа фильмов
@@ -21,7 +23,7 @@ Route::group(['prefix' => 'api'], function () {
 
 Route::group(['prefix' => 'administrator'], function () {
     Route::resource('/cinema-halls', CinemaHallController::class);
-    Route::post('/cinema-halls/add', [CinemaHallController::class,'show']);
+    Route::post('/cinema-halls/add', [CinemaHallController::class,'store']);
     Route::delete('/cinema-halls/del/{id}', [CinemaHallController::class, 'destroyById'])->name('cinema-halls.destroy-by-id');
 });
 

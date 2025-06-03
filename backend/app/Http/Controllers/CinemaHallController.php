@@ -23,7 +23,6 @@ class CinemaHallController extends Controller
 // Метод для создания нового зала
 public function store(Request $request)
 {
-    //return response()->json(['message' => 'Cinema hall created successfully!', 'data' => '$hall'], 201);
     $validatedData = $request->validate([
         'name'              => 'required|string|max:255',
         'total_rows'        => 'required|integer|min:1',
