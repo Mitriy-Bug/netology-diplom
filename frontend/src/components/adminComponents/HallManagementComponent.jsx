@@ -16,7 +16,6 @@ function HallManagementComponent({ halls, setHalls }) {
                 },
                 body: JSON.stringify({ name: name, total_rows: total_rows, total_seats_per_row: total_seats_per_row }),
             });
-            //console.log(JSON.stringify({ name: name, total_rows: total_rows, total_seats_per_row: total_seats_per_row }))
             if (!response.ok) {
                 throw new Error('Ошибка создания зала');
             }
@@ -33,7 +32,7 @@ function HallManagementComponent({ halls, setHalls }) {
 
     const deleteHall = async (hallId) => {
         try {
-            const response = await fetch(`http://127.0.0.1:3000/administrator/cinema-halls/del/${hallId}`, {
+            const response = await fetch(`http://127.0.0.1:8000/administrator/cinema-halls/del/${hallId}`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

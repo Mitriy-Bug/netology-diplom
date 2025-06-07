@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import HallManagementComponent from './HallManagementComponent';
 import ConfigurationHallsComponent from './ConfigurationHallsComponent';
 import PriceConfigurationComponent from './PriceConfigurationComponent';
-//import SessionGridComponent from './SessionGridComponent';
+import SessionGridComponent from './SessionGridComponent';
 import '../../layouts/admin/CSS/styles.css'
 function AdministratorMainComponent() {
     const [halls, setHalls] = useState([]); // Состояние все залы
@@ -32,6 +32,7 @@ function AdministratorMainComponent() {
                 <HallManagementComponent halls={halls} setHalls={setHalls}/>
                 <ConfigurationHallsComponent/>
                 <PriceConfigurationComponent/>
+                <SessionGridComponent/>
             </main>
             
         </div>
