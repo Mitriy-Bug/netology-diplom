@@ -12,6 +12,7 @@ function HallManagementComponent({ halls, setHalls }) {
             const response = await fetch('http://127.0.0.1:8000/administrator/cinema-halls/add', {
                 method: 'POST',
                 headers: {
+                    //ContentType: 'application/json', Так не работает
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({ name: name, total_rows: total_rows, total_seats_per_row: total_seats_per_row }),
@@ -35,7 +36,7 @@ function HallManagementComponent({ halls, setHalls }) {
             const response = await fetch(`http://127.0.0.1:8000/administrator/cinema-halls/del/${hallId}`, {
                 method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application/json',
+                    ContentType: 'application/json',
                 }
             
             });
@@ -46,6 +47,7 @@ function HallManagementComponent({ halls, setHalls }) {
     
             const data = await response.json();
             console.log(data.message); // Сообщение об успешном удалении
+            setMessage('Зал успешно удален');
             setHalls(halls.filter(hall => hall.id !== hallId)); // Обновляем список залов
         } catch (error) {
             console.error(error.message);

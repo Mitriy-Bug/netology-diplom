@@ -24,10 +24,14 @@ class CorsMiddleware
         }
 
         $response = $next($request);
-        
+
         foreach ($headers as $key => $value) {
             $response->header($key, $value);
         }
+
+//        $response->headers->set('Access-Control-Allow-Origin', 'http://127.0.0.1:8000');
+//        $response->headers->set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+//        $response->headers->set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 
         return $response;
     }

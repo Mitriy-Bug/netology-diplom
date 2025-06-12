@@ -18,3 +18,4 @@ class VerifyCsrfToken extends Middleware
         '/administrator/cinema-halls/del/*'
     ];
 }
+
