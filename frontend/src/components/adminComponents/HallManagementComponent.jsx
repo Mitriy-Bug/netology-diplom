@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import PropTypes from 'prop-types';
+import ApiService from './ApiService';
 
+// Создаем экземпляр класса ApiService, передавая базовый URL API
+const api = new ApiService('http://127.0.0.1:8000/administrator/cinema-halls');
 
 function HallManagementComponent({ halls, setHalls }) {
     const [message, setMessage] = useState(null);
@@ -8,24 +11,9 @@ function HallManagementComponent({ halls, setHalls }) {
     const addNewHall = async ( name, total_rows, total_seats_per_row ) => {
 
         try {
-            // Отправка данных на сервер
-            const response = await fetch('http://127.0.0.1:8000/administrator/cinema-halls/add', {
-                method: 'POST',
-                headers: {
-                    //ContentType: 'application/json', Так не работает
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ name: name, total_rows: total_rows, total_seats_per_row: total_seats_per_row }),
-            });
-            if (!response.ok) {
-                throw new Error('Ошибка создания зала');
-            }
-
-            const data = await response.json();
-            console.log(data)
-            setHalls([...halls, data.data]); // Обновляем список залов
+            const addNew = await api.post('/add', {name: name, total_rows: total_rows, total_seats_per_row: total_seats_per_row});
+            setHalls([...halls, addNew.data]); // Обновляем список залов
             setMessage('Зал успешно добавлен!');
-            
         } catch (error) {
             alert(error.message);
         }
@@ -33,22 +21,9 @@ function HallManagementComponent({ halls, setHalls }) {
 
     const deleteHall = async (hallId) => {
         try {
-            const response = await fetch(`http://127.0.0.1:8000/administrator/cinema-halls/del/${hallId}`, {
-                method: 'DELETE',
-                headers: {
-                    ContentType: 'application/json',
-                }
-            
-            });
-    
-            if (!response.ok) {
-                throw new Error('Ошибка удаления зала.');
-            }
-    
-            const data = await response.json();
-            console.log(data.message); // Сообщение об успешном удалении
-            setMessage('Зал успешно удален');
+            const deleteHall = await api.delete(`/del/${hallId}`);
             setHalls(halls.filter(hall => hall.id !== hallId)); // Обновляем список залов
+            setMessage('Зал успешно удален!');
         } catch (error) {
             console.error(error.message);
         }

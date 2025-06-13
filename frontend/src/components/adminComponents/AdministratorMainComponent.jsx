@@ -31,7 +31,7 @@ function AdministratorMainComponent() {
             <main className="conf-steps">
                 <HallManagementComponent halls={halls} setHalls={setHalls}/>
                 <ConfigurationHallsComponent/>
-                <PriceConfigurationComponent/>
+                <PriceConfigurationComponent halls={halls}/>
                 <SessionGridComponent/>
             </main>
             
