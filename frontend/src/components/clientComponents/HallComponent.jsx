@@ -35,7 +35,7 @@ function HallComponent() {
     }
 
     return (
-        <>
+        <div className='client_body'>
             <HeaderClientsComponent /> 
             <main>
                 <section className="buying">
@@ -52,8 +52,7 @@ function HallComponent() {
                     <PlacesComponent session={session}/>
                 </section>
             </main>
-
-        </>
+        </div>
         
     )
 }

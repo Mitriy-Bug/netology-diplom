@@ -40,13 +40,16 @@ const PaymentComponent = () => {
     
         try {
             // Перебираем каждое кресло и формируем массив данных для отправки
-            const seatsData = selectedSeat.map(([row, col]) => ({
-                session_id: session.id,
-                hall_seat_id: session.cinema_hall.id,
-                row_number: row,
-                seat_number: col + 1, // Добавляем 1, чтобы номера начинались с 1
-                is_booked: true,
-            }));
+            const seatsData = selectedSeat.map(([row, col]) => (
+                    {
+                    session_id: session.id,
+                    hall_seat_id: session.cinema_hall.id,
+                    row_number: row,
+                    seat_number: col + 1, // Добавляем 1, чтобы номера начинались с 1
+                    is_booked: true,
+                    }
+                )
+            );
     
             const response = await fetch(url, {
                 method: 'POST',
@@ -55,6 +58,7 @@ const PaymentComponent = () => {
                 },
                 body: JSON.stringify({ seats: seatsData }), // Отправляем массив данных
             });
+            console.log(response)
     
             if (!response.ok) {
                 throw new Error(`Ошибка при создании записи: ${response.status}`);
@@ -96,7 +100,7 @@ const PaymentComponent = () => {
     const rowsToDisplay = Object.entries(rowsWithSeats).map(([rowNumber, seatsInRow]) => `Ряд ${rowNumber}, Место: ${seatsInRow.join(', ')}`);
 
     return (
-        <>
+        <div className='client_body'>
             <HeaderClientsComponent /> 
             <main>
                 <section className="ticket">        
@@ -126,8 +130,7 @@ const PaymentComponent = () => {
                     </div>
                 </section>
             </main>
-        </>
-          
+        </div>
     );
 };
 

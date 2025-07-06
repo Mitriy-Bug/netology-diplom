@@ -64,7 +64,7 @@ const PlacesComponent = ({ session }) => {
 
     return (
         // В компоненте PlacesComponent добавляем передачу rowIndex и colIndex в функцию обратного вызова
-        <>
+        <div className='client_body'>
         <div className="buying-scheme">
             <div className="buying-scheme__wrapper">
                 {rowsArray.map((rowIndex) => (
@@ -111,7 +111,7 @@ const PlacesComponent = ({ session }) => {
             
         </div>       
         <button className="acceptin-button" onClick={handleSubmit}> Забронировать </button>
-        </>
+        </div>
     );
 };
 
