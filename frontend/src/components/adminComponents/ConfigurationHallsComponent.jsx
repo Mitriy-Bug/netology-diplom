@@ -1,7 +1,7 @@
 import React from 'react';
-//import PropTypes from 'prop-types';
+import PropTypes from 'prop-types';
 
-function ConfigurationHallsComponent() {
+function ConfigurationHallsComponent({ halls }) {
 
     return(
         <section className="conf-step">
@@ -12,8 +12,11 @@ function ConfigurationHallsComponent() {
 
                 <p className="conf-step__paragraph">Выберите зал для конфигурации:</p>
                 <ul className="conf-step__selectors-box">
-                <li><input type="radio" className="conf-step__radio" name="chairs-hall" value="Зал 1" checked/><span className="conf-step__selector">Зал 1</span></li>
-                <li><input type="radio" className="conf-step__radio" name="chairs-hall" value="Зал 2"/><span className="conf-step__selector">Зал 2</span></li>
+                    {halls.map((hall) => (
+                        <li key={hall.id}>
+                            <input type="radio" className="conf-step__radio" name="chairs-hall" value="Зал {hall.name}" checked/><span className="conf-step__selector">Зал {hall.name}</span>
+                        </li>
+                    ))}
                 </ul>
 
                 <p className="conf-step__paragraph">Укажите количество рядов и максимальное количество кресел в ряду:</p>
@@ -74,13 +77,14 @@ function ConfigurationHallsComponent() {
     )
 }
 // Пропсы
-// ConfigurationHallsComponent.propTypes = {
-//     halls: PropTypes.arrayOf(
-//         PropTypes.shape({
-//             id: PropTypes.number.isRequired,
-//             name: PropTypes.string.isRequired,
-//         })
-//     ).isRequired,
-//     setHalls: PropTypes.func.isRequired,
-// };
+ConfigurationHallsComponent.propTypes = {
+    halls: PropTypes.arrayOf(
+        PropTypes.shape({
+            id: PropTypes.number.isRequired,
+            name: PropTypes.string.isRequired,
+        })
+    ).isRequired,
+    setHalls: PropTypes.func.isRequired,
+};
+
 export default ConfigurationHallsComponent;

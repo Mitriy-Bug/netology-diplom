@@ -54,7 +54,7 @@ const PaymentComponent = () => {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
-                    "ContentType": 'application/json'
+                    "Content-Type": 'application/json'
                 },
                 body: JSON.stringify({ seats: seatsData }), // Отправляем массив данных
             });
