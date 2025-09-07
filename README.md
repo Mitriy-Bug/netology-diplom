@@ -12,7 +12,7 @@
 ## Установка и настройка
 1. ### Клонируйте репозиторий:
 
-        git clone https://github.com/donecvolsk/cinema_doplom<
+        git clone https://github.com/Mitriy-Bug/netology-diplom
 
 2. ### Установите зависимости для Laravel:<br>
         cd backend
@@ -46,7 +46,7 @@
 
         Теперь ваш Laravel доступен по адресу: http://localhost:8000<br>
 
-    Структура проекта<br>
+    Структура проекта
 
             /app: Логика бизнес-процессов и моделей.
             /config: Конфигурационные файлы.

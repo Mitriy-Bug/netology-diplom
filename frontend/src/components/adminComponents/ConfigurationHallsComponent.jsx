@@ -14,7 +14,12 @@ function ConfigurationHallsComponent({ halls }) {
                 <ul className="conf-step__selectors-box">
                     {halls.map((hall) => (
                         <li key={hall.id}>
-                            <input type="radio" className="conf-step__radio" name="chairs-hall" value="Зал {hall.name}" checked/><span className="conf-step__selector">Зал {hall.name}</span>
+                            <input type="radio" className="conf-step__radio" name="chairs-hall" 
+                                   value="Зал {hall.name}"
+                                   readOnly
+                                   checked
+                            />
+                            <span className="conf-step__selector">Зал {hall.name}</span>
                         </li>
                     ))}
                 </ul>

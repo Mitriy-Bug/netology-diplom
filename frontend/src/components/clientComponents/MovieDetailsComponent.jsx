@@ -31,6 +31,7 @@ const MovieDetailsComponent = () => {
   };
 
   return (
+
     <div className='client_body'>
       <HeaderClientsComponent />    
       <DateMenuComponent onDateChange={handleDateChange} /> {/* Передача функции handleDateChange */}    

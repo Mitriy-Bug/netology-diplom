@@ -88,7 +88,7 @@ console.log(name, rows, seats);
                 <h2 className="conf-step__title">Управление залами</h2>
             </header>
             <form method="POST" action="/profile">
-                <input type="hidden" name="_token" value="{{ csrf_token() }}" />
+                <input type="hidden" name="_token" value="{{ csrf_token() }}" readOnly />
             </form>
             <div className="conf-step__wrapper">
                 <p className="conf-step__paragraph">Доступные залы:</p>
