@@ -20,12 +20,12 @@ class CinemaHallsSeeder extends Seeder
             'total_rows' => 3,
             'total_seats_per_row' => 3,
         ]);
-        
+
         CinemaHall::create([
             'name' => '2',
             'total_rows' => 4,
             'total_seats_per_row' => 4,
         ]);
-        
+
     }
 }

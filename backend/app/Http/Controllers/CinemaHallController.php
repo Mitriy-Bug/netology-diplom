@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Models\HallSeat;
+use App\Models\SeatType;
 use Illuminate\Support\Facades\Validator; // Добавлен импорт Validator
 use Illuminate\Http\Request;
 use App\Models\CinemaHall;
@@ -30,8 +32,77 @@ public function store(Request $request)
     ]);
 
     $hall = CinemaHall::create($validatedData);
+    SeatType::create([
+        'id_hall' => $hall->id,
+        'type'    => 'Стандарт',
+        'price'   => 100,
+    ]);
+    SeatType::create([
+        'id_hall' => $hall->id,
+        'type'    => 'VIP',
+        'price'   => 200,
+    ]);
     return response()->json(['message' => 'Cinema hall created successfully!', 'data' => $hall], 201);
 }
+// Метод для конфигурации зала
+    public function configure(Request $request)
+    {
+        // Валидация входных данных
+        $validatedData = $request->validate([
+            '*.hall_id' => 'required|integer|min:1',
+            '*.row' => 'required|integer|min:1',
+            '*.seat' => 'required|integer|min:1',
+            '*.type' => 'required|string',
+        ]);
+
+        try {
+            $createdSeats = [];
+
+            foreach ($validatedData as $seatData) {
+                // Преобразуем тип в ID
+                $seatTypeId = $this->getSeatTypeId($seatData['type']);
+
+                // Используем updateOrCreate для обновления существующих или создания новых записей
+                $seat = HallSeat::updateOrCreate(
+                    [
+                        'cinema_hall_id' => $seatData['hall_id'],
+                        'row_number' => $seatData['row'],
+                        'seat_number' => $seatData['seat']
+                    ],
+                    [
+                        'seat_type_id' => $seatTypeId
+                    ]
+                );
+
+                $createdSeats[] = $seat;
+            }
+
+            return response()->json([
+                'message' => 'Cinema hall seats configured successfully!',
+                'data' => $createdSeats,
+                'count' => count($createdSeats)
+            ], 201);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error configuring cinema hall seats',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    private function getSeatTypeId($typeName)
+    {
+        $typeMap = [
+            'standart' => 1,
+            'standard' => 1,
+            'vip' => 2,
+            'disabled' => 3,
+            'blocked' => 3
+        ];
+
+        return $typeMap[strtolower($typeName)] ?? 1;
+    }
 
 
 

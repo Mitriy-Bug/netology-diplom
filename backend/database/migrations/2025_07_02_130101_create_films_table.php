@@ -17,8 +17,8 @@ class CreateFilmsTable extends Migration
             $table->string('title');
             $table->text('description'); // Замена жанра на описание
             $table->integer('duration');
-            $table->string('origin'); // Поле страна
-            $table->string('poster'); // Добавлено поле для постера
+            $table->string('origin')->nullable(); // Поле страна
+            $table->string('poster')->nullable(); // Добавлено поле для постера
             $table->timestamps();
         });
     }

@@ -1,61 +1,136 @@
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import FilmCardComponent from './FilmCardComponent';
 import moment from "moment/moment";
-
 import PropTypes from 'prop-types';
 import ApiService from './ApiService';
+
 // Создаем экземпляр класса ApiService, передавая базовый URL API
 const api = new ApiService('http://127.0.0.1:8000/administrator/cinema-halls');
 
-function SessionGridComponent(halls, setHalls) {
+function SessionGridComponent({ halls, setHalls }) {
   const [films, setFilms] = useState([]); // Состояние всех фильмов
   const [selectedDate, setSelectedDate] = useState(moment().startOf('day')); // Состояние дата меню с датами
   const [showPopup, setShowPopup] = useState(false);
   const [message, setMessage] = useState(null);
-  const [newHallData, setNewHallData] = useState({
+  const [newFilmData, setNewFilmData] = useState({
     name: '',
-    total_rows: '',
-    total_seats_per_row: ''
+    description: '',
+    duration: '',
+    poster: null // Добавлено: для хранения файла постера
   });
+  const [posterPreview, setPosterPreview] = useState(null); // Для предпросмотра изображения
+
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setNewHallData(prev => ({
+    setNewFilmData(prev => ({
       ...prev,
       [name]: value
     }));
   };
-  const handleClosePopup = () => {
-    setShowPopup(false);
-  };
-  const handleConfirmAdd = () => {
-    // const name = prompt("Введите название нового зала:");
-    // const total_rows = parseInt(prompt("Введите количество рядов:"));
-    // const total_seats_per_row = parseInt(prompt("Введите количество мест в ряду:"));
-    //
-    // if (name && !Number.isNaN(total_rows) && !Number.isNaN(total_seats_per_row)) {
-    //     addNewHall(name, total_rows, total_seats_per_row); // Вызываем onAddHall с нужными аргументами
-    // } else {
-    //     alert("Проверьте правильность введенных данных.");
-    // }
-    const { name, total_rows, total_seats_per_row } = newHallData;
-    const rows = parseInt(total_rows);
-    const seats = parseInt(total_seats_per_row);
-    console.log(name, rows, seats);
-    if (name  && rows > 0 && seats > 0) {
-      addNewHall(name, rows, seats);
-      setShowPopup(false);
-    } else {
-      alert("Проверьте правильность введенных данных.");
+
+  // Обработчик выбора файла постера
+  const handlePosterChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNewFilmData(prev => ({
+        ...prev,
+        poster: file
+      }));
+
+      // Создаем предпросмотр изображения
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPosterPreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
+
+  const handleClosePopup = () => {
+    setShowPopup(false);
+    setPosterPreview(null); // Очищаем предпросмотр
+    setNewFilmData({
+      name: '',
+      description: '',
+      duration: '',
+      poster: null
+    });
+  };
+
+  const handleConfirmAdd = async (e) => {
+    e.preventDefault(); // Добавлено: предотвращаем стандартное поведение формы
+
+    const { name, description, duration, poster } = newFilmData;
+    const durationValue = parseInt(duration);
+
+    if (name && description && durationValue > 0) {
+      try {
+        await addNewFilm(name, description, durationValue, poster);
+        setShowPopup(false);
+        setPosterPreview(null);
+        setNewFilmData({
+          title: '',
+          description: '',
+          duration: '',
+          poster: null
+        });
+      } catch (error) {
+        alert("Ошибка при добавлении фильма: " + error.message);
+      }
+    } else {
+      console.log("Проверьте правильность введенных данных.");
+    }
+  };
+
+  // Функция для добавления нового фильма
+  const addNewFilm = async (title, description, duration, poster) => {
+
+    try {
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('description', description);
+      formData.append('duration', parseInt(duration));
+      if (poster) {
+        formData.append('poster', poster);
+      }
+
+      const response = await fetch('http://localhost:8000/api/films/add', {
+        method: 'POST',
+        headers: {
+          //'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        credentials: 'same-origin',
+        body: formData
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`HTTP ${response.status}: ${errorData.message || response.statusText}`);
+      }
+
+      const newFilm = await response.json();
+      setFilms(prev => [...prev, newFilm]);
+      setMessage('Фильм успешно добавлен!');
+
+      // Очистка сообщения через 3 секунды
+      setTimeout(() => setMessage(null), 3000);
+
+    } catch (error) {
+      console.error('Ошибка при добавлении фильма:', error);
+      throw error;
+    }
+  };
+
   const addNewHall = async (name, total_rows, total_seats_per_row) => {
     try {
-      const addNew = await api.post('/add', {
+      const addNew = await api.post('', {
         name: name,
         total_rows: total_rows,
         total_seats_per_row: total_seats_per_row
       });
-      setHalls([...halls, addNew.data]); // Обновляем список залов
+      setHalls([...halls, addNew.data]);
       setMessage('Зал успешно добавлен!');
     } catch (error) {
       alert(error.message);
@@ -65,7 +140,6 @@ function SessionGridComponent(halls, setHalls) {
   useEffect(() => {
     const fetchFilms = async () => {
       try {
-        //Получение всех фильмов
         const response = await fetch('http://localhost:8000/api/films');
         const data = await response.json();
         setFilms(data);
@@ -76,30 +150,31 @@ function SessionGridComponent(halls, setHalls) {
 
     fetchFilms();
   }, []);
-  // Функция клика на меню дат
+
   const handleDateChange = (date) => {
     setSelectedDate(date);
   };
+
   const handleAddFilmClick = () => {
     setShowPopup(true);
-    // Сброс данных формы при открытии
-    setNewHallData({
+    setNewFilmData({
       name: '',
       description: '',
-      duration: ''
+      duration: '',
+      poster: null
     });
   };
 
-    return(
+  return (
       <section className="conf-step">
         <header className="conf-step__header conf-step__header_opened">
           <h2 className="conf-step__title">Сетка сеансов</h2>
         </header>
         <div className="conf-step__wrapper">
-          <p className="conf-step__paragraph">
-            {/*<button className="conf-step__button conf-step__button-accent">Добавить фильм</button>*/}
+          <div className="conf-step__paragraph">
             <button className="conf-step__button conf-step__button-accent" onClick={handleAddFilmClick}>Добавить фильм</button>
-            {message && <p>{message}</p>}
+            {message && <p className="message">{message}</p>}
+
             {/* Popup для создания нового фильма */}
             {showPopup && (
                 <div className="popup active">
@@ -109,7 +184,7 @@ function SessionGridComponent(halls, setHalls) {
                         <h2 className="popup__title">
                           Добавление фильма
                           <a className="popup__dismiss" href="#" onClick={(e) => { e.preventDefault(); handleClosePopup(); }}>
-                            <img src="i/close.png" alt="Закрыть" />
+                            <img src="/i/close.png" alt="Закрыть" />
                           </a>
                         </h2>
                       </div>
@@ -122,7 +197,7 @@ function SessionGridComponent(halls, setHalls) {
                                 type="text"
                                 placeholder="Например, «Новый фильм»"
                                 name="name"
-                                value={newHallData.name}
+                                value={newFilmData.name}
                                 onChange={handleInputChange}
                                 required
                             />
@@ -134,7 +209,7 @@ function SessionGridComponent(halls, setHalls) {
                                 type="text"
                                 placeholder="Опишите фильм"
                                 name="description"
-                                value={newHallData.description}
+                                value={newFilmData.description}
                                 onChange={handleInputChange}
                                 required
                             />
@@ -146,18 +221,43 @@ function SessionGridComponent(halls, setHalls) {
                                 type="number"
                                 placeholder="Например, 90"
                                 name="duration"
-                                value={newHallData.duration}
+                                value={newFilmData.duration}
                                 onChange={handleInputChange}
                                 required
+                                min="1"
                             />
                           </label>
-                          <div className="conf-step__buttons text-center">
+
+                          {/* Добавлено: поле для загрузки постера */}
+                          <label className="conf-step__label conf-step__label-fullsize">
+                            Загрузить постер
                             <input
-                                type="submit"
-                                value="Добавить фильм"
-                                className="conf-step__button conf-step__button-accent"
-                                data-event="hall_add"
+                                className="conf-step__input"
+                                type="file"
+                                accept="image/*"
+                                onChange={handlePosterChange}
                             />
+                          </label>
+
+                          {/* Предпросмотр постера */}
+                          {posterPreview && (
+                              <div className="poster-preview">
+                                <p>Предпросмотр постера:</p>
+                                <img
+                                    src={posterPreview}
+                                    alt="Предпросмотр постера"
+                                    style={{ maxWidth: '200px', maxHeight: '300px' }}
+                                />
+                              </div>
+                          )}
+
+                          <div className="conf-step__buttons text-center">
+                            <button
+                                type="submit"
+                                className="conf-step__button conf-step__button-accent"
+                            >
+                              Добавить фильм
+                            </button>
                             <button
                                 className="conf-step__button conf-step__button-regular"
                                 type="button"
@@ -172,16 +272,17 @@ function SessionGridComponent(halls, setHalls) {
                   </div>
                 </div>
             )}
-          </p>
-            {films.length > 0 ? (
-                <div className="conf-step__movies">
-                  {films.map(film => (
-                      <FilmCardComponent key={film.id} filmId={film.id} selectedDate={selectedDate} />
-                  ))}
-                </div>
-            ) : (
-                <p>Нет доступных фильмов.</p>
-            )}
+          </div>
+
+          {films.length > 0 ? (
+              <div className="conf-step__movies">
+                {films.map(film => (
+                    <FilmCardComponent key={film.id} filmId={film.id} selectedDate={selectedDate} />
+                ))}
+              </div>
+          ) : (
+              <p>Нет доступных фильмов.</p>
+          )}
 
           <div className="conf-step__seances">
             <div className="conf-step__seances-hall">
@@ -198,7 +299,7 @@ function SessionGridComponent(halls, setHalls) {
                 <div className="conf-step__seances-movie" style={{ width: '65px', backgroundColor: 'rgb(202, 255, 133)', left: '420px' }}>
                   <p className="conf-step__seances-movie-title">Звёздные войны XXIII: Атака клонированных клонов</p>
                   <p className="conf-step__seances-movie-start">14:00</p>
-                </div>              
+                </div>
               </div>
             </div>
             <div className="conf-step__seances-hall">
@@ -211,19 +312,20 @@ function SessionGridComponent(halls, setHalls) {
                 <div className="conf-step__seances-movie" style={{ width: '60px', backgroundColor: 'rgb(133, 255, 137)', left: '660px' }}>
                   <p className="conf-step__seances-movie-title">Миссия выполнима</p>
                   <p className="conf-step__seances-movie-start">22:00</p>
-                </div>              
+                </div>
               </div>
             </div>
           </div>
-          
+
           <fieldset className="conf-step__buttons text-center">
             <button className="conf-step__button conf-step__button-regular">Отмена</button>
             <input type="submit" value="Сохранить" className="conf-step__button conf-step__button-accent"/>
-          </fieldset>  
+          </fieldset>
         </div>
       </section>
-    )
+  )
 }
+
 // Пропсы
 SessionGridComponent.propTypes = {
   halls: PropTypes.arrayOf(

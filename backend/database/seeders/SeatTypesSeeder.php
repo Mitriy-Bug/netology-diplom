@@ -17,17 +17,25 @@ class SeatTypesSeeder extends Seeder
         // Добавляем три типа кресел
         SeatType::create([
             'type' => 'Стандарт',
-            'price' => 200.00,
+            'price' => 100.00,
+            'id_hall' => 1,
         ]);
-        
+
         SeatType::create([
             'type' => 'VIP',
-            'price' => 400.00,
+            'price' => 200.00,
+            'id_hall' => 1,
         ]);
-        
         SeatType::create([
-            'type' => 'Blocked',
-            'price' => 0.00,
+            'type' => 'Стандарт',
+            'price' => 100.00,
+            'id_hall' => 2,
+        ]);
+
+        SeatType::create([
+            'type' => 'VIP',
+            'price' => 200.00,
+            'id_hall' => 2,
         ]);
     }
 }

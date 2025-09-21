@@ -116,7 +116,7 @@ console.log(name, rows, seats);
                                 <h2 className="popup__title">
                                     Добавление зала
                                     <a className="popup__dismiss" href="#" onClick={(e) => { e.preventDefault(); handleClosePopup(); }}>
-                                        <img src="i/close.png" alt="Закрыть" />
+                                        <img src="/i/close.png" alt="Закрыть" />
                                     </a>
                                 </h2>
                             </div>
@@ -140,6 +140,8 @@ console.log(name, rows, seats);
                                             className="conf-step__input"
                                             type="number"
                                             placeholder="Например, 10"
+                                            min="7"
+                                            max="21"
                                             name="total_rows"
                                             value={newHallData.total_rows}
                                             onChange={handleInputChange}
@@ -152,6 +154,8 @@ console.log(name, rows, seats);
                                             className="conf-step__input"
                                             type="number"
                                             placeholder="Например, 10"
+                                            min="7"
+                                            max="21"
                                             name="total_seats_per_row"
                                             value={newHallData.total_seats_per_row}
                                             onChange={handleInputChange}

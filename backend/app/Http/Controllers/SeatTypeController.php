@@ -13,7 +13,12 @@ class SeatTypeController extends Controller
         $seatTypes = SeatType::all();
         return response()->json($seatTypes);
     }
-
+    // Метод для получения типов кресел по ID зала
+    public function getByHall($hallId)
+    {
+        $seatTypes = SeatType::where('id_hall', $hallId)->get();
+        return response()->json($seatTypes);
+    }
     // Метод для получения конкретного типа кресла по ID
     public function show($id)
     {
@@ -42,6 +47,20 @@ class SeatTypeController extends Controller
         ]);
 
         $seatType = SeatType::findOrFail($id);
+        $seatType->update($validatedData);
+        return response()->json($seatType);
+    }
+
+    public function updatePrice(Request $request)
+    {
+        $validatedData = $request->validate([
+            'id' => 'numeric|min:0',
+            'id_hall' => 'numeric|min:0',
+            'type' => 'string|max:255',
+            'price' => 'numeric|min:0'
+        ]);
+
+        $seatType = SeatType::findOrFail($validatedData['id']);
         $seatType->update($validatedData);
         return response()->json($seatType);
     }

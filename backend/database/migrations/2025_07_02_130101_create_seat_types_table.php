@@ -17,6 +17,7 @@ class CreateSeatTypesTable extends Migration
             $table->id(); // Идентификатор типа кресла
             $table->string('type'); // Тип кресла ('Standard', 'VIP', 'Blocked', 'Occupied')
             $table->decimal('price', 8, 2); // Цена за кресло данного типа
+            $table->integer('id_hall'); // ID зала
             $table->timestamps(); // Поля created_at и updated_at
         });
     }
