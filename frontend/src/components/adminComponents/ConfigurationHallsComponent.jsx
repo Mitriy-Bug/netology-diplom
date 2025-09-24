@@ -1,13 +1,77 @@
-import React,{ useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import ApiService from "./ApiService";
 
 function ConfigurationHallsComponent({ halls }) {
-    // Функция для генерации схемы зала
     const [selectedHallId, setSelectedHallId] = useState(halls.length > 0 ? halls[0].id : null);
-    const [seatsConfig, setSeatsConfig] = useState({}); // Состояние для конфигурации кресел
+    const [allSeatsConfig, setAllSeatsConfig] = useState({}); // Состояние для конфигурации кресел по залам
+    const [hallSeatsData, setHallSeatsData] = useState({}); // Храним данные из БД для каждого зала
+    const [seatTypes, setSeatTypes] = useState({}); // Храним типы кресел
     const [message, setMessage] = useState(null);
 
+    // Загрузка данных для выбранного зала
+    useEffect(() => {
+        if (selectedHallId) {
+            loadHallSeats(selectedHallId);
+        }
+    }, [selectedHallId]);
+    // Устанавливаем первый зал активным при загрузке компонента
+    useEffect(() => {
+        if (halls.length > 0 && selectedHallId === null) {
+            setSelectedHallId(halls[0].id);
+        }
+    }, [halls, selectedHallId]);
+
+    // Загрузка данных о креслах для зала из БД
+    const loadHallSeats = async (hallId) => {
+        try {
+            const response = await fetch(`http://127.0.0.1:8000/api/hall-seats/hall/${hallId}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            setHallSeatsData(prev => ({
+                ...prev,
+                [hallId]: data || []
+            }));
+
+            // Инициализируем конфигурацию кресел из БД
+            const hallSeatsConfig = {};
+            (data || []).forEach(seat => {
+                const rowIndex = seat.row_number - 1;
+                const seatIndex = seat.seat_number - 1;
+                const seatKey = `${rowIndex}-${seatIndex}`;
+                // Преобразуем seat_type_id в строковый тип
+                const seatType = getSeatTypeFromId(seat.seat_type_id);
+                hallSeatsConfig[seatKey] = seatType;
+            });
+
+            // Обновляем конфигурацию для текущего зала
+            setAllSeatsConfig(prev => ({
+                ...prev,
+                [hallId]: hallSeatsConfig
+            }));
+        } catch (error) {
+            console.error('Ошибка загрузки кресел:', error);
+            // Инициализируем пустую конфигурацию
+            setAllSeatsConfig(prev => ({
+                ...prev,
+                [hallId]: {}
+            }));
+        }
+    };
+
+    // Вспомогательная функция для преобразования ID типа в строку
+    const getSeatTypeFromId = (seatTypeId) => {
+        const typeMap = {
+            1: 'standart',
+            2: 'vip',
+            3: 'disabled'
+        };
+        return typeMap[seatTypeId] || 'standart';
+    };
 
     // Функция для сохранения конфигурации кресел
     const saveSeatsConfiguration = async () => {
@@ -17,14 +81,14 @@ function ConfigurationHallsComponent({ halls }) {
         }
 
         try {
-            // Преобразуем конфигурацию в формат для отправки на сервер
-            const seatsData = Object.keys(seatsConfig).map(seatKey => {
+            const currentHallConfig = allSeatsConfig[selectedHallId] || {};
+            const seatsData = Object.keys(currentHallConfig).map(seatKey => {
                 const [row, seat] = seatKey.split('-');
                 return {
                     hall_id: selectedHallId,
-                    row: parseInt(row) + 1, // +1 потому что ряды обычно считаются с 0
-                    seat: parseInt(seat) + 1, // +1 потому что места обычно считаются с 0
-                    type: seatsConfig[seatKey]
+                    row: parseInt(row) + 1,
+                    seat: parseInt(seat) + 1,
+                    type: currentHallConfig[seatKey]
                 };
             });
 
@@ -38,19 +102,28 @@ function ConfigurationHallsComponent({ halls }) {
                 body: JSON.stringify(seatsData)
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
             setMessage('Конфигурация кресел успешно сохранена!');
-            console.log('Сохранено:', response);
+
+            // После сохранения перезагружаем данные
+            await loadHallSeats(selectedHallId);
+
         } catch (error) {
             console.error('Ошибка при сохранении конфигурации:', error);
             setMessage('Ошибка при сохранении конфигурации: ' + error.message);
         }
     };
+
     // Функция для переключения типа кресла
     const toggleSeatType = (rowIndex, seatIndex) => {
         const seatKey = `${rowIndex}-${seatIndex}`;
-        const currentType = seatsConfig[seatKey] || 'standart';
+        const currentHallConfig = allSeatsConfig[selectedHallId] || {};
+        const currentType = currentHallConfig[seatKey] || 'standart';
 
-        // Определяем следующий тип кресла
         let nextType;
         switch (currentType) {
             case 'standart':
@@ -66,15 +139,22 @@ function ConfigurationHallsComponent({ halls }) {
                 nextType = 'standart';
         }
 
-        setSeatsConfig(prev => ({
+        setAllSeatsConfig(prev => ({
             ...prev,
-            [seatKey]: nextType
+            [selectedHallId]: {
+                ...prev[selectedHallId],
+                [seatKey]: nextType
+            }
         }));
     };
-    const generateHallScheme = (hallId) => {
-        // Находим зал по ID
-        const hall = halls.find(h => h.id === hallId);
 
+    // Обработчик выбора зала
+    const handleHallSelect = (hallId) => {
+        setSelectedHallId(hallId);
+    };
+
+    const generateHallScheme = (hallId) => {
+        const hall = halls.find(h => h.id === hallId);
         if (!hall) return null;
 
         const rows = hall.total_rows || 0;
@@ -82,19 +162,24 @@ function ConfigurationHallsComponent({ halls }) {
 
         if (rows <= 0 || seats <= 0) return null;
 
+        // Используем конфигурацию для конкретного зала
+        const hallSeatsConfig = allSeatsConfig[hallId] || {};
+
         const scheme = [];
         for (let i = 0; i < rows; i++) {
             const row = [];
             for (let j = 0; j < seats; j++) {
-
                 const seatKey = `${i}-${j}`;
+                // Сначала проверяем пользовательские изменения, затем данные из БД
+                const seatType = hallSeatsConfig[seatKey] ||
+                    getSeatTypeFromDB(selectedHallId, i, j) ||
+                    'standart';
 
-                const seatType = seatsConfig[seatKey] || 'standart';
                 row.push(
                     <span
                         key={seatKey}
                         className={`conf-step__chair conf-step__chair_${seatType}`}
-                        onClick={() => toggleSeatType(i, j)} // Обработчик клика
+                        onClick={() => toggleSeatType(i, j)}
                         style={{ cursor: 'pointer' }}
                     ></span>
                 );
@@ -104,53 +189,59 @@ function ConfigurationHallsComponent({ halls }) {
                     {row}
                 </div>
             );
-
         }
         return scheme;
     };
-    return(
+
+    // Функция для получения типа кресла из БД
+    const getSeatTypeFromDB = (hallId, rowIndex, seatIndex) => {
+        const hallData = hallSeatsData[hallId] || [];
+        const dbSeat = hallData.find(seat =>
+            seat.row_number === rowIndex + 1 &&
+            seat.seat_number === seatIndex + 1
+        );
+
+        if (dbSeat) {
+            return getSeatTypeFromId(dbSeat.seat_type_id);
+        }
+        return 'standart';
+    };
+
+    return (
         <section className="conf-step">
             <header className="conf-step__header conf-step__header_opened">
                 <h2 className="conf-step__title">Конфигурация залов</h2>
             </header>
             <div className="conf-step__wrapper">
-
                 <p className="conf-step__paragraph">Выберите зал для конфигурации:</p>
                 <ul className="conf-step__selectors-box">
                     {halls.map((hall) => (
                         <li key={hall.id}>
-                            <input type="radio"
-                                   className={`conf-step__radio ${selectedHallId === hall.id ? 'active' : ''}`}
-                                   name="chairs-hall"
-                                   readOnly
-                                   value={hall.id} // Уникальное значение для каждой кнопки
-                                   checked={selectedHallId === hall.id}
-                                   onChange={() => setSelectedHallId(hall.id)}
+                            <input
+                                type="radio"
+                                className="conf-step__radio"
+                                name="chairs-hall"
+                                value={hall.id}
+                                checked={selectedHallId === hall.id}
+                                onChange={() => handleHallSelect(hall.id)}
                             />
                             <span className="conf-step__selector">Зал {hall.name}</span>
                         </li>
                     ))}
                 </ul>
 
-                {/*<p className="conf-step__paragraph">Укажите количество рядов и максимальное количество кресел в ряду:</p>*/}
-                {/*<div className="conf-step__legend">*/}
-                {/*<label className="conf-step__label">Рядов, шт<input type="text" className="conf-step__input" placeholder="10" /></label>*/}
-                {/*<span className="multiplier">x</span>*/}
-                {/*<label className="conf-step__label">Мест, шт<input type="text" className="conf-step__input" placeholder="8" /></label>*/}
-                {/*</div>*/}
-
                 <p className="conf-step__paragraph">Вы можете указать типы кресел на схеме зала:</p>
                 <div className="conf-step__legend">
-                <span className="conf-step__chair conf-step__chair_standart"></span> — обычные кресла
-                <span className="conf-step__chair conf-step__chair_vip"></span> — VIP кресла
-                <span className="conf-step__chair conf-step__chair_disabled"></span> — заблокированные (нет кресла)
-                <p className="conf-step__hint">Чтобы изменить вид кресла, нажмите по нему левой кнопкой мыши</p>
+                    <span className="conf-step__chair conf-step__chair_standart"></span> — обычные кресла
+                    <span className="conf-step__chair conf-step__chair_vip"></span> — VIP кресла
+                    <span className="conf-step__chair conf-step__chair_disabled"></span> — заблокированные (нет кресла)
+                    <p className="conf-step__hint">Чтобы изменить вид кресла, нажмите по нему левой кнопкой мыши</p>
                 </div>
 
                 <div className="conf-step__hall">
-                <div className="conf-step__hall-wrapper">
-                    {generateHallScheme(selectedHallId)}
-                </div>
+                    <div className="conf-step__hall-wrapper">
+                        {generateHallScheme(selectedHallId)}
+                    </div>
                 </div>
 
                 <fieldset className="conf-step__buttons text-center">
@@ -158,16 +249,17 @@ function ConfigurationHallsComponent({ halls }) {
                         className="conf-step__button conf-step__button-regular"
                         onClick={() => {
                             setSelectedHallId(halls.length > 0 ? halls[0].id : null);
-                            setSeatsConfig({});
+                            setAllSeatsConfig({});
+                            setHallSeatsData({});
                             setMessage(null);
                         }}
                     >
                         Отмена
                     </button>
                     <button
-                        type="button" // Изменил с input на button
+                        type="button"
                         className="conf-step__button conf-step__button-accent"
-                        onClick={saveSeatsConfiguration} // Обработчик сохранения
+                        onClick={saveSeatsConfiguration}
                     >
                         Сохранить
                     </button>
@@ -179,17 +271,20 @@ function ConfigurationHallsComponent({ halls }) {
                     </div>
                 )}
             </div>
-</section>
+        </section>
     )
 }
+
 // Пропсы
 ConfigurationHallsComponent.propTypes = {
     halls: PropTypes.arrayOf(
         PropTypes.shape({
             id: PropTypes.number.isRequired,
             name: PropTypes.string.isRequired,
+            total_rows: PropTypes.number,
+            total_seats_per_row: PropTypes.number,
         })
-    ).isRequired
+    ).isRequired,
 };
 
 export default ConfigurationHallsComponent;

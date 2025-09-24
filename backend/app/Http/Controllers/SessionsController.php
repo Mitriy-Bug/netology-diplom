@@ -45,4 +45,56 @@ class SessionsController extends Controller
         $hallSeats = $session->cinemaHall->seats;
         return response()->json($hallSeats);
     }
+    public function add(Request $request)
+    {
+        // Валидация входных данных
+        $validatedData = $request->validate([
+            'hall_id' => 'required|exists:cinema_halls,id',
+            'film_id' => 'required|exists:films,id',
+            'session_time' => 'required'
+        ]);
+
+        $hallId = $validatedData['hall_id'];
+        $filmId = $validatedData['film_id'];
+        $sessionTime = Carbon::parse($validatedData['session_time'])->format('Y-m-d H:i:s');
+
+        try {
+            // Создаем сеанс
+            $session = Session::create([
+                'cinema_hall_id' => $hallId,
+                'film_id' => $filmId,
+                'start_time' => $sessionTime,
+                'end_time' => $sessionTime,
+
+            ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Сеанс успешно добавлен',
+                'data' => $session
+            ], 201);
+
+        } catch (\Exception $e) {
+            \Log::error('Ошибка при добавлении сеанса: ' . $e->getMessage());
+
+            return response()->json([
+                'success' => false,
+                'error' => 'Ошибка при добавлении сеанса: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    public function destroyById($id)
+    {
+        // Находим зал по его ID
+        $session = Session::find($id);
+
+        if ($session) {
+            // Удаляем сеанс
+            $session->delete();
+            // Возвращаем ответ клиенту
+            return response()->json(['message' => 'Seance deleted successfully!'], 200);
+        } else {
+            // Если зал не найден, возвращаем ошибку
+            return response()->json(['message' => 'Seance not found!'], 404);
+        }
+    }
 }

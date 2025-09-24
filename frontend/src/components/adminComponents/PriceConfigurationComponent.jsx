@@ -2,20 +2,27 @@ import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 function PriceConfigurationComponent({ halls }) {
-    const [selectedHallId, setSelectedHallId] = useState(halls.length > 0 ? halls[0].id : null);
+    const [selectedPriceHallId, setSelectedPriceHallId] = useState(null); // Изначально null
     const [seatPrices, setSeatPrices] = useState([]); // Состояние для хранения цен по типам кресел
     const [message, setMessage] = useState(null);
     const [priceInputs, setPriceInputs] = useState({}); // Состояние для значений инпутов
 
+    // Устанавливаем первый зал активным при загрузке компонента
+    useEffect(() => {
+        if (halls.length > 0 && selectedPriceHallId === null) {
+            setSelectedPriceHallId(halls[0].id);
+        }
+    }, [halls]); // Убран selectedPriceHallId из зависимостей
+
     // Найдем выбранный зал
-    const selectedHall = halls.find(hall => hall.id === selectedHallId);
+    const selectedHall = halls.find(hall => hall.id === selectedPriceHallId);
 
     // Загрузка цен для выбранного зала
     useEffect(() => {
-        if (selectedHallId) {
-            loadPricesForHall(selectedHallId);
+        if (selectedPriceHallId) {
+            loadPricesForHall(selectedPriceHallId);
         }
-    }, [selectedHallId]);
+    }, [selectedPriceHallId]);
 
     // Функция для загрузки цен для зала
     const loadPricesForHall = async (hallId) => {
@@ -23,25 +30,32 @@ function PriceConfigurationComponent({ halls }) {
             const response = await fetch(`http://localhost:8000/api/seat-types/hall/${hallId}`);
             const data = await response.json();
             setSeatPrices(data || []);
-            //console.log(data);
+
+            // Инициализируем состояние инпутов
+            const initialInputs = {};
+            (data || []).forEach(seatType => {
+                initialInputs[seatType.id] = seatType.price.toString();
+            });
+            setPriceInputs(initialInputs);
+
         } catch (error) {
             console.error('Ошибка загрузки цен:', error);
             setSeatPrices([]);
+            setPriceInputs({});
         }
     };
 
     // Обработчик изменения цены
     const handlePriceChange = (typeId, value) => {
-        setSeatPrices(prev => prev.map(seatType =>
-            seatType.id === typeId
-                ? { ...seatType, price: value }
-                : seatType
-        ));
+        setPriceInputs(prev => ({
+            ...prev,
+            [typeId]: value
+        }));
     };
 
     // Функция для сохранения цен
     const savePrices = async (hallId) => {
-        if (!selectedHallId) {
+        if (!selectedPriceHallId) {
             setMessage('Пожалуйста, выберите зал');
             return;
         }
@@ -55,23 +69,21 @@ function PriceConfigurationComponent({ halls }) {
                 id_hall: hallId
             }));
 
-            //console.log('Отправляем данные:', pricesToSend);
             const promises = pricesToSend.map(async (priceData) => {
-
-            const response = await fetch(`http://localhost:8000/api/seat-types/hall/update-price`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    id: priceData.id,
-                    type: priceData.type,
-                    price: priceData.price,
-                    id_hall: priceData.id_hall
-                })
-            });
+                const response = await fetch(`http://localhost:8000/api/seat-types/hall/update-price`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        id: priceData.id,
+                        type: priceData.type,
+                        price: priceData.price,
+                        id_hall: priceData.id_hall
+                    })
+                });
 
                 if (!response.ok) {
                     const errorText = await response.text();
@@ -81,9 +93,13 @@ function PriceConfigurationComponent({ halls }) {
                 return response.json();
             });
 
-            await Promise.all(promises)
+            await Promise.all(promises);
 
             setMessage('Цены успешно сохранены!');
+
+            // Перезагружаем данные
+            await loadPricesForHall(hallId);
+
         } catch (error) {
             console.error('Ошибка при сохранении цен:', error);
             setMessage('Ошибка при сохранении цен: ' + error.message);
@@ -92,30 +108,10 @@ function PriceConfigurationComponent({ halls }) {
 
     // Функция для рендеринга полей ввода цен
     const renderPriceInputs = () => {
-        // Фиксированные типы кресел
-        const seatTypesConfig = [
-            { id: 'standart', type: 'standard', name: 'Стандарт' },
-            { id: 'vip', type: 'vip', name: 'VIP' }
-        ];
-
         if (seatPrices.length === 0) {
-            return seatTypesConfig.map(seatType => (
-                <div key={seatType.id} className="conf-step__legend">
-                    <label className="conf-step__label">
-                        Цена, рублей
-                        <input
-                            type="number"
-                            className="conf-step__input"
-                            placeholder="0"
-                            onChange={(e) => handlePriceChange(seatType.id, e.target.value)}
-                            min="0"
-                            step="1"
-                        />
-                    </label>
-                    за <span className={`conf-step__chair conf-step__chair_${seatType.type}`}></span> {seatType.name} кресла
-                </div>
-            ));
+            return <p>Нет данных о типах кресел для этого зала</p>;
         }
+
         return seatPrices.map(seatType => (
             <div key={seatType.id} className="conf-step__legend">
                 <label className="conf-step__label">
@@ -124,7 +120,7 @@ function PriceConfigurationComponent({ halls }) {
                         type="number"
                         className="conf-step__input"
                         placeholder="0"
-                        value={seatType.price || ''}
+                        value={priceInputs[seatType.id] || seatType.price || ''}
                         onChange={(e) => handlePriceChange(seatType.id, e.target.value)}
                         min="0"
                         step="0.01"
@@ -149,10 +145,10 @@ function PriceConfigurationComponent({ halls }) {
                             <input
                                 type="radio"
                                 className="conf-step__radio"
-                                name="chairs-hall"
+                                name="chairs-hall-price"
                                 value={hall.id}
-                                checked={selectedHallId === hall.id}
-                                onChange={() => setSelectedHallId(hall.id)}
+                                checked={selectedPriceHallId === hall.id}
+                                onChange={() => setSelectedPriceHallId(hall.id)}
                             />
                             <span className="conf-step__selector">Зал {hall.name}</span>
                         </li>
@@ -169,8 +165,9 @@ function PriceConfigurationComponent({ halls }) {
                             <button
                                 className="conf-step__button conf-step__button-regular"
                                 onClick={() => {
-                                    setSelectedHallId(halls.length > 0 ? halls[0].id : null);
+                                    setSelectedPriceHallId(halls.length > 0 ? halls[0].id : null);
                                     setSeatPrices([]);
+                                    setPriceInputs({});
                                     setMessage(null);
                                 }}
                             >
@@ -179,7 +176,8 @@ function PriceConfigurationComponent({ halls }) {
                             <button
                                 type="button"
                                 className="conf-step__button conf-step__button-accent"
-                                onClick={() =>savePrices(selectedHallId)}
+                                onClick={() => savePrices(selectedPriceHallId)}
+                                disabled={!selectedPriceHallId}
                             >
                                 Сохранить
                             </button>

@@ -5,6 +5,7 @@ use App\Http\Controllers\ImageController;
 use App\Http\Controllers\SessionsController;
 use App\Http\Controllers\SessionSeatController;
 use App\Http\Controllers\SeatTypeController;
+use App\Http\Controllers\HallSeatsController;
 use App\Http\Controllers\CinemaHallController;
 use App\Http\Controllers\FilmsController;
 
@@ -17,10 +18,13 @@ Route::group(['prefix' => 'api'], function () {
     Route::get('/images/{filename}', [ImageController::class, 'show']); //получить линк ссылку на картинку к фильму
     Route::get('/sessions/hall-seats/{sessionId}', [SessionsController::class, 'getHallSeats']);//получить все кресла в зале по сессии
     Route::resource('seat-types', SeatTypeController::class);// типы кресел
-    Route::get('/seat-types/hall/{hallId}', [SeatTypeController::class, 'getByHall']); // типы кресел по залу
+    Route::get('/seat-types/hall/{hallId}', [SeatTypeController::class, 'getByHall']); // Цены на типы кресел по залу
     Route::post('/seat-types/hall/update-price', [SeatTypeController::class, 'updatePrice']); // обновление цен по типу креслу
     Route::resource('/session-seats', SessionSeatController::class);// занятые кресла
     Route::get('/session-seats-is_booked', [SessionSeatController::class, 'getSessionSeatsIs_booked']);//получить занятые кресла в зале по сессии
+    Route::post('/session/add-film', [SessionsController::class, 'add']);// Добавление фильма в прокат
+    Route::get('/hall-seats/hall/{hallId}', [HallSeatsController::class, 'getByHall']); // Выбранные типы кресел по залу /session-remove/${sessionId}
+    Route::delete('/session-remove/{sessionId}', [SessionsController::class, 'destroyById'])->name('session.destroy-by-id');
 });
 
 Route::group(['prefix' => 'administrator'], function () {

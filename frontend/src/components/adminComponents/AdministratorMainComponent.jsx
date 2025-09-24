@@ -32,7 +32,7 @@ function AdministratorMainComponent() {
                 <HallManagementComponent halls={halls} setHalls={setHalls}/>
                 <ConfigurationHallsComponent halls={halls}/>
                 <PriceConfigurationComponent halls={halls}/>
-                <SessionGridComponent/>
+                <SessionGridComponent halls={halls}/>
             </main>
             
         </div>
